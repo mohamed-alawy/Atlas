@@ -1,0 +1,49 @@
+{
+	"info": {
+		"_postman_id": "3c3dc624-8d49-4134-a14f-98db88b452f2",
+		"name": "mini-rag-app",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "45719693",
+		"_collection_link": "https://mini-rag-0007.postman.co/workspace/mini-rag-app~603548d2-b5f7-4710-949a-8842d1a24359/collection/45719693-3c3dc624-8d49-4134-a14f-98db88b452f2?action=share&source=collection_link&creator=45719693"
+	},
+	"item": [
+		{
+			"name": "welcome-requist",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "api",
+			"value": ""
+		}
+	]
+}
