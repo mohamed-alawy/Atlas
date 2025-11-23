@@ -6,10 +6,10 @@ class FileController(BaseController):
     def __init__(self):
         super().__init__()
 
-    def get_file_path(self, file_id: str):
-        file_dir = os.path.join(self.files_dir, file_id)
+    def get_file_path(self, project_id: str):
+        project_path = os.path.join(self.files_dir, project_id)
 
-        if not os.path.exists(file_dir):
-            os.makedirs(file_dir)
+        if not os.path.exists(project_path):
+            os.makedirs(project_path)
 
-        return file_dir
+        return project_path

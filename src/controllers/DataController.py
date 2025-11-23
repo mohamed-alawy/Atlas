@@ -19,16 +19,16 @@ class DataController(BaseController):
         
         return True, ResponseStatus.FILE_VALID.value
     
-    def generate_unique_file_path(self, original_filename: str, file_id: str):
+    def generate_unique_file_path(self, original_filename: str, project_id: str):
         
         random_name = self.generate_random_string()
-        file_path = FileController().get_file_path(file_id)
+        project_path = FileController().get_file_path(project_id)
         cleaned_filename = self.get_cleaned_filename(original_filename)
 
-        new_file_path = os.path.join(file_path, f"{random_name}_{cleaned_filename}")
+        new_file_path = os.path.join(project_path, f"{random_name}_{cleaned_filename}")
         while os.path.exists(new_file_path):
             random_name = self.generate_random_string()
-            new_file_path = os.path.join(file_path, f"{random_name}_{cleaned_filename}")
+            new_file_path = os.path.join(project_path, f"{random_name}_{cleaned_filename}")
         return new_file_path, random_name+"_"+cleaned_filename
     
     def get_cleaned_filename(self, original_filename: str):
