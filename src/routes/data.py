@@ -1,7 +1,6 @@
-from fastapi import APIRouter, FastAPI, Depends, UploadFile, status
+from fastapi import APIRouter, Depends, UploadFile, status
 from fastapi.responses import JSONResponse
-import os
-from helpers.config import get_settings, settings
+from helpers import get_settings, settings
 from controllers import DataController
 import aiofiles
 from models import ResponseStatus
@@ -29,7 +28,7 @@ async def upload_file(file_id: str, file: UploadFile,
             content={"error": message}
         )
 
-    file_path = dataController.generate_unique_file_name(file.filename, file_id)
+    file_path, file_id = dataController.generate_unique_file_path(file.filename, file_id)
 
     try:
         async with aiofiles.open(file_path, 'wb') as f:
@@ -45,7 +44,8 @@ async def upload_file(file_id: str, file: UploadFile,
         )
     
     return JSONResponse(
-        content={"message": ResponseStatus.FILE_UPLOAD_SUCCESS.value}
+        content={"message": ResponseStatus.FILE_UPLOAD_SUCCESS.value,
+                 "file_id": file_id}
     )
      
 

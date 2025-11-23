@@ -1,4 +1,4 @@
-from helpers.config import settings, get_settings
+from helpers import get_settings
 import os
 import random
 import string
