@@ -10,3 +10,4 @@ langchain==1.0.8
 PyMuPDF==1.26.6
 langchain-community==0.4.1
 langchain-text-splitters==1.0.0
+motor==3.7.1

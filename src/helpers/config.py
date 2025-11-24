@@ -8,6 +8,8 @@ class settings(BaseSettings):
     FILE_ALLOWED_TYPES: list
     MAX_FILE_SIZE_MB: int
     FILE_CHUNK_SIZE: int
+    MONGO_URI: str
+    MONGO_DATABASE: str
     
     class Config:
         env_file = ".env"
