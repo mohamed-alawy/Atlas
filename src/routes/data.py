@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, UploadFile, status
+from fastapi import APIRouter, Depends, UploadFile, status, Request
 from fastapi.responses import JSONResponse
 from helpers import get_settings, settings
 from controllers import DataController, ProcessController
@@ -6,6 +6,9 @@ import aiofiles
 from models import ResponseStatus
 import logging
 from .schemas.data import ProcessRequest
+from models.ProjectModel import ProjectModel
+from models.db_schemas import DataChunk
+from models.ChunkModel import ChunkModel
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -15,8 +18,11 @@ data_router = APIRouter(
 )
 
 @data_router.post("/upload/{project_id}")
-async def upload_file(project_id: str, file: UploadFile, 
+async def upload_file(request: Request, project_id: str, file: UploadFile, 
                       app_settings : settings = Depends(get_settings)):
+ 
+    project_model = ProjectModel(request.app.db_client)
+    project = await project_model.get_project_or_create_one(project_id)
 
     # validate file
     dataController = DataController()
@@ -46,16 +52,20 @@ async def upload_file(project_id: str, file: UploadFile,
     
     return JSONResponse(
         content={"message": ResponseStatus.FILE_UPLOAD_SUCCESS.value,
-                 "file_id": file_id}
+                 "file_id": file_id,
+                 }
     )
      
 @data_router.post("/process/{project_id}")
-async def process_file(project_id: str, process_request: ProcessRequest):
-    
+async def process_file(request: Request, project_id: str, process_request: ProcessRequest):
+
     chunk_size = process_request.chunk_size
     overlap_size = process_request.overlap_size
     do_reset = process_request.do_reset
     file_id = process_request.file_id
+
+    project_model = ProjectModel(request.app.db_client)
+    project = await project_model.get_project_or_create_one(project_id)
 
     process_controller = ProcessController(project_id)
 
@@ -73,7 +83,30 @@ async def process_file(project_id: str, process_request: ProcessRequest):
             content={"error": ResponseStatus.FILE_PROCESSING_FAILED.value}
         )
     
+    file_chunks = [
+        DataChunk(
+            chunk_text=chunk.page_content,
+            chunk_metadata=chunk.metadata,
+            chunk_order=i+1,
+            chunk_project_id=project.id
+        )
+        for i, chunk in enumerate(file_chunks)
+        ]
+    
+    chunk_model = ChunkModel(request.app.db_client)
+
+    if do_reset:
+        await chunk_model.delete_chunks_by_project_id(project.id)
+        return JSONResponse(
+            content={"message": ResponseStatus.FILE_PROCESSING_RESET.value,
+                     "num_chunks": 0,
+                     }
+        )
+
+    num_records = await chunk_model.insert_multiple_chunks(file_chunks)
+
     return JSONResponse(
         content={"message": ResponseStatus.FILE_PROCESSING_SUCCESS.value,
-                 "num_chunks": len(file_chunks)}
+                 "num_chunks": num_records,
+                 }
     )
