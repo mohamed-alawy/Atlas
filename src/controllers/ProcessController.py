@@ -1,5 +1,5 @@
 from .BaseController import BaseController
-from .FileController import FileController
+from .ProjectController import ProjectController
 import os
 from langchain_community.document_loaders import TextLoader, PyMuPDFLoader 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -9,7 +9,7 @@ class ProcessController(BaseController):
     def __init__(self, project_id: str):
         super().__init__()
         self.project_id = project_id
-        self.project_path = FileController().get_file_path(project_id)
+        self.project_path = ProjectController().get_file_path(project_id)
 
     def get_file_extension(self, file_id: str):
         return os.path.splitext(file_id)[-1]

@@ -1,5 +1,5 @@
 from .BaseController import BaseController
-from .FileController import FileController
+from .ProjectController import ProjectController
 from fastapi import UploadFile
 from models import ResponseStatus
 import regex as re
@@ -22,7 +22,7 @@ class DataController(BaseController):
     def generate_unique_file_path(self, original_filename: str, project_id: str):
         
         random_name = self.generate_random_string()
-        project_path = FileController().get_file_path(project_id)
+        project_path = ProjectController().get_file_path(project_id)
         cleaned_filename = self.get_cleaned_filename(original_filename)
 
         new_file_path = os.path.join(project_path, f"{random_name}_{cleaned_filename}")
