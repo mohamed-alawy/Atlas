@@ -1,11 +1,19 @@
 services :
   mongodb:
     image: mongo:noble
+    
     container_name: mongodb
+
     ports:
      - "27027:27017"  # Map host port 27027 to container port 27017
+    
     volumes:
       - mongodb_data:/data/db
+
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+
     networks:
       - backend
 

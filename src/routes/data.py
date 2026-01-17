@@ -21,7 +21,7 @@ data_router = APIRouter(
 async def upload_file(request: Request, project_id: str, file: UploadFile, 
                       app_settings : settings = Depends(get_settings)):
  
-    project_model = ProjectModel(request.app.db_client)
+    project_model = await ProjectModel.create_instance(request.app.db_client)
     project = await project_model.get_project_or_create_one(project_id)
 
     # validate file
@@ -64,7 +64,7 @@ async def process_file(request: Request, project_id: str, process_request: Proce
     do_reset = process_request.do_reset
     file_id = process_request.file_id
 
-    project_model = ProjectModel(request.app.db_client)
+    project_model = await ProjectModel.create_instance(request.app.db_client)
     project = await project_model.get_project_or_create_one(project_id)
 
     process_controller = ProcessController(project_id)
@@ -93,7 +93,7 @@ async def process_file(request: Request, project_id: str, process_request: Proce
         for i, chunk in enumerate(file_chunks)
         ]
     
-    chunk_model = ChunkModel(request.app.db_client)
+    chunk_model = await ChunkModel.create_instance(request.app.db_client)
 
     if do_reset:
         await chunk_model.delete_chunks_by_project_id(project.id)

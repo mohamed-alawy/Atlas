@@ -7,6 +7,23 @@ class ProjectModel(BaseDataModel):
         super().__init__(db_client)
         self.collection = self.db_client[DataBaaseEnum.CLLECTION_PROJECTS_NAME.value]
 
+    @classmethod
+    async def create_instance(cls, db_client: object):
+        instance = cls(db_client)
+        await instance.initialize_collection()
+        return instance
+
+    async def initialize_collection(self):
+        all_collections = await self.db_client.list_collection_names()
+        if DataBaaseEnum.CLLECTION_PROJECTS_NAME.value not in all_collections:
+            await self.db_client.create_collection(DataBaaseEnum.CLLECTION_PROJECTS_NAME.value)
+
+        # Always ensure indexes exist (idempotent) — previously indexes were only created when the
+        # collection was newly created, so existing collections could miss required indexes.
+        indexes = Project.get_indexes()
+        for index in indexes:
+            await self.collection.create_index(index["key"], name=index["name"], unique=index["unique"])
+
     async def create_project(self, project: Project):
         result = await self.collection.insert_one(project.dict(by_alias=True, exclude_unset=True))
         project._id = result.inserted_id
