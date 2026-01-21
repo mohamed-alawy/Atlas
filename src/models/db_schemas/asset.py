@@ -24,7 +24,7 @@ class Asset(BaseModel):
                         ("asset_project_id", 1)
                         ],
                     "name": "asset_project_id_index",
-                    "unique": True
+                    "unique": False
                 },
                 {
                     "key" : [
