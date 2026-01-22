@@ -1,9 +1,9 @@
-from ..LLMinterfface import LLMInterface
+from ..LLMInterface import LLMInterface
 from openai import OpenAI
 import logging
 from ..LLMEnums import OpenAIEnums
 
-class OpenaiProvider(LLMInterface):
+class OpenAIProvider(LLMInterface):
     def __init__(self, api_key: str, base_url: str = None,
                  defult_input_token: int = 1000,
                  defult_generation_output_token: int = 1000,
@@ -75,7 +75,7 @@ class OpenaiProvider(LLMInterface):
             return None
         
         response = self.client.embeddings.create(
-            input=text,
+            input=self.get_proccessed_text(text),
             model=self.embedding_model_id
         )
 

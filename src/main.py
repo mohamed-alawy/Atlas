@@ -2,15 +2,25 @@ from fastapi import FastAPI
 from routes import base, data
 from helpers import get_settings
 from motor.motor_asyncio import AsyncIOMotorClient
+from stores.llm.LLMProviderFactory import LLMProviderFactory
 
 app = FastAPI()
 
 @app.on_event("startup")
 async def startup_db_client():
     settings = get_settings()
-    
     app.mongo_connection = AsyncIOMotorClient(settings.MONGO_URI)
     app.db_client = app.mongo_connection[settings.MONGO_DATABASE]
+
+    llm_provider_factory = LLMProviderFactory(config=settings)
+
+    # Initialize LLM providers
+    app.generation_client = llm_provider_factory.create(settings.GENERATION_BACKEND)
+    app.generation_client.set_generation_model(model_id=settings.GENERATION_MODEL_ID)
+
+    app.embedding_client = llm_provider_factory.create(settings.EMBEDDING_BACKEND)
+    app.embedding_client.set_embedding_model(model_id=settings.EMBEDDING_MODEL_ID,
+                                             embedding_size=settings.EMBEDDING_MODEL_SIZE)
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
