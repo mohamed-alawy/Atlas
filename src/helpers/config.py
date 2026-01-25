@@ -27,6 +27,10 @@ class settings(BaseSettings):
     GENERATION_MAX_TOKEN: int = None
     GENERATION_TEMPERATURE: float = None
 
+    VECTOR_DB_BACKEND: str 
+    VECTOR_DB_PATH: str 
+    VECTOR_DB_DISTANCE_METHOD: str = None
+
     class Config:
         env_file = ".env"
 
