@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes import base, data
+from routes import base, data, nlp
 from helpers import get_settings
 from motor.motor_asyncio import AsyncIOMotorClient
 from stores.llm.LLMProviderFactory import LLMProviderFactory
@@ -24,14 +24,19 @@ async def startup_span():
                                              embedding_size=settings.EMBEDDING_MODEL_SIZE)
     
     # Initialize VectorDB providers
-    app.vector_db_client = vectordb_provider_factory.create(settings.VECTORDB_BACKEND)
+    app.vector_db_client = vectordb_provider_factory.create(settings.VECTOR_DB_BACKEND)
     app.vector_db_client.connect()
 
 async def shutdown_span():
     app.mongo_connection.close()
     app.vector_db_client.disconnect()
 
-app.router.lifespan.on_startup.append(startup_span)
-app.router.lifespan.on_shutdown.append(shutdown_span)
+# app.router.lifespan.on_startup.append(startup_span)
+# app.router.lifespan.on_shutdown.append(shutdown_span)
+
+app.on_event("startup")(startup_span)
+app.on_event("shutdown")(shutdown_span)
+
 app.include_router(base.base_router)
 app.include_router(data.data_router)
+app.include_router(nlp.nlp_router)
