@@ -22,6 +22,7 @@ class CoHereProvider(LLMInterface):
 
         self.client = cohere.Client(self.api_key)
 
+        self.enums = CoHereEnums
         self.logger = logging.getLogger(__name__)
 
     def set_generation_model(self, model_id: str):
@@ -34,25 +35,25 @@ class CoHereProvider(LLMInterface):
     def get_proccessed_text(self, text: str):
         return text[:self.defult_input_token].strip()
     
-    def generate_text(self, prompt: str,chat_history: list = [], max_output_tokens: int = None, temperature: float = None):
+    def generate_text(self, prompt: str,chat_history: list = None, max_output_tokens: int = None, temperature: float = None):
         if not self.client:
-            raise ValueError("Cohere client is not initialized.")
             return None
         
         if not self.generation_model_id:
-            raise ValueError("Generation model is not set.")
             return None
         
         max_output_tokens = max_output_tokens if max_output_tokens else self.defult_generation_output_token
         temperature = temperature if temperature is not None else self.defult_generation_temperature
 
+        chat_history = list(chat_history) if chat_history is not None else []
         chat_history.append(self.construct_prompt(prompt, CoHereEnums.USER.value))
 
-        response = self.client.generate(
+        response = self.client.chat(
             model=self.generation_model_id,
-            prompt=chat_history,
-            max_tokens=max_output_tokens,
-            temperature=temperature
+            message=self.get_proccessed_text(prompt),
+            chat_history=chat_history,
+            temperature=temperature,
+            max_tokens=max_output_tokens
         )
 
         if not response or not response.text:
@@ -60,14 +61,13 @@ class CoHereProvider(LLMInterface):
             return None
         
         return response.text
+      
     
     def embed_text(self, text: str, document_type: str = None):
         if not self.client:
-            raise ValueError("Cohere client is not initialized.")
             return None
         
         if not self.embedding_model_id:
-            raise ValueError("Embedding model is not set.")
             return None
         
         input_type = CoHereEnums.DOCUMENT.value 
@@ -90,5 +90,5 @@ class CoHereProvider(LLMInterface):
     def construct_prompt(self, prompt, role):
         return {
             "role": role, 
-            "content": self.get_proccessed_text(prompt)
+            "message": self.get_proccessed_text(prompt)
         }

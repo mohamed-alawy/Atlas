@@ -21,8 +21,12 @@ class OpenAIProvider(LLMInterface):
         self.embedding_model_id = None
         self.embedding_size = None
 
-        self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+        self.client = OpenAI(
+            api_key=self.api_key, 
+            base_url=self.base_url if self.base_url and len(self.base_url) > 0 else None
+            )
 
+        self.enums = OpenAIEnums
         self.logger = logging.getLogger(__name__)
 
     def set_generation_model(self, model_id: str):
@@ -37,18 +41,17 @@ class OpenAIProvider(LLMInterface):
     def get_proccessed_text(self, text: str):
         return text[:self.defult_input_token].strip()
     
-    def generate_text(self, prompt: str,chat_history: list = [], max_output_tokens: int = None, temperature: float = None):
+    def generate_text(self, prompt: str,chat_history: list = None, max_output_tokens: int = None, temperature: float = None):
         if not self.client:
-            raise ValueError("OpenAI client is not initialized.")
             return None
         
         if not self.generation_model_id:
-            raise ValueError("Generation model is not set.")
             return None
         
         max_output_tokens = max_output_tokens if max_output_tokens else self.defult_generation_output_token
         temperature = temperature if temperature is not None else self.defult_generation_temperature
 
+        chat_history = list(chat_history) if chat_history is not None else []
         chat_history.append(self.construct_prompt(prompt, OpenAIEnums.USER.value))
 
         response = self.client.chat.completions.create(
@@ -67,11 +70,9 @@ class OpenAIProvider(LLMInterface):
        
     def embed_text(self, text: str, document_type: str = None):
         if not self.client:
-            raise ValueError("OpenAI client is not initialized.")
             return None
         
         if not self.embedding_model_id:
-            raise ValueError("Embedding model is not set.")
             return None
         
         response = self.client.embeddings.create(
