@@ -1,4 +1,4 @@
-# mini-rag
+# Atlas
 
 This is a minimal implementation of the RAG model for question answering.
 
@@ -11,11 +11,11 @@ This is a minimal implementation of the RAG model for question answering.
 1) Download and install MiniConda from [here](https://docs.anaconda.com/free/miniconda/#quick-command-line-install)
 2) Create a new environment using the following command:
 ```bash
-$ conda create -n mini-rag python=3.10
+$ conda create -n Atlas python=3.10
 ```
 3) Activate the environment:
 ```bash
-$ conda activate mini-rag
+$ conda activate Atlas
 ```
 
 ### (Optional) Setup you command line interface for better readability
@@ -44,6 +44,14 @@ $ cp .env.example .env
 $ uvicorn main:app --reload --host 0.0.0.0 --port 5000
 ```
 
+## Run Docker Compose
+```bash
+$ cd docker
+$ cp .env.example .env
+```
+- update `.env` with your credentials
+
+
 ## POSTMAN Collection
 
-Download the POSTMAN collection from [/assets/mini-rag-app.postman_collection.json](/assets/mini-rag-app.postman_collection.json)
+Download the POSTMAN collection from [/assets/Atlas-app.postman_collection.json](/assets/mini-rag-app.postman_collection.json)
