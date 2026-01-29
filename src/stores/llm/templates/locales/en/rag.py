@@ -27,5 +27,7 @@ footer_prompt = Template(
     "\n".join([
         "\n",
         "### Answer the question based on the above context.",
+        "### Question:",
+        "$query",
         "### Answer:"
     ]))

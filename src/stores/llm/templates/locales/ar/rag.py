@@ -15,7 +15,7 @@ system_prompt = Template(
 )
 
 ### DOCUMENT RETRIEVAL TEMPLATES ###
-doucument_prompt = Template(
+document_prompt = Template(
     "\n".join([
         "## المستند رقم: $doc_index:",
         "## المحتوى: $chunk_text",
@@ -27,6 +27,8 @@ footer_prompt = Template(
     "\n".join([
         "\n",
         "### أجب عن السؤال بناءً على السياق أعلاه.",
+        "### السؤال:",
+        "$query",
         "### الإجابة:"
     ])
 )
