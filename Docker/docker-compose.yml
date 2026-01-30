@@ -1,26 +1,34 @@
 services :
   mongodb:
     image: mongo:noble
-    
     container_name: mongodb
-
     ports:
      - "27027:27017"  # Map host port 27027 to container port 27017
-    
     volumes:
       - mongodb_data:/data/db
-
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-
     networks:
       - backend
-
     restart: always  # Restart the container automatically if it stops
+
+  pgvector:
+    image: pgvector/pgvector:0.8.1-pg18-trixie
+    container_name: pgvector
+    ports:
+      - "5432:5432" 
+    volumes:
+      - pgvector_data:/var/lib/postgresql
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    networks:
+      - backend
+    restart: always  
 
 volumes:
   mongodb_data:
+  pgvector_data:
 
 networks:
   backend:
