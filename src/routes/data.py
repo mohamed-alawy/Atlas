@@ -98,7 +98,7 @@ async def process_file(request: Request, project_id: int, process_request: Proce
     else:
         project_assets = await asset_model.get_all_assets(project.project_id, AssetTypeEnum.FILE.value)
         project_files_ids = {
-                    record.asset_project_id:record.asset_name 
+                    record.asset_id:record.asset_name 
                     for record in project_assets
                     }
 
@@ -148,7 +148,7 @@ async def process_file(request: Request, project_id: int, process_request: Proce
                 chunk_metadata=chunk.metadata,
                 chunk_order=i+1,
                 chunk_project_id=project.project_id,
-                chunk_assets_id=asset_id
+                chunk_asset_id=asset_id
             )
             for i, chunk in enumerate(file_chunks)
             ]

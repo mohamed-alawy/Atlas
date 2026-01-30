@@ -23,7 +23,8 @@ class Asset(SQLAlchemyBase):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     project = relationship("Project", back_populates="assets")
-
+    chunks = relationship("DataChunk", back_populates="asset")
+    
     __table_args__ = (
         Index('ix_asset_project_id', asset_project_id),
         Index('ix_asset_type', asset_type),

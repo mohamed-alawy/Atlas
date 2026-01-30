@@ -19,3 +19,25 @@ alembic revision --autogenerate -m "Add ..."
 ```bash
 alembic upgrade head
 ```
+
+### Create the database (if missing)
+
+If the `atlas` database does not exist, create it before running migrations. Examples:
+
+- Using the running `pgvector` container:
+
+```bash
+sudo docker exec -u postgres pgvector psql -c "CREATE DATABASE atlas;"
+```
+
+- Using a local `psql` client (adjust host/user as needed):
+
+```bash
+psql -h localhost -U postgres -c "CREATE DATABASE atlas;"
+```
+
+After creating the database run:
+
+```bash
+alembic upgrade head
+```

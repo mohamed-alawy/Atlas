@@ -1,1 +1,1 @@
-from .atlas.schemas import Project, DataChunk, RetrievedDocument, Asset
+from models.db_schemas.atlas.schemas import Project, DataChunk, RetrievedDocument, Asset

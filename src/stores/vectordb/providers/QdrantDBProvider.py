@@ -1,7 +1,7 @@
 from qdrant_client import QdrantClient, models
 from ..VectorDBInterface import VectorDBInterface
 from ..VectorDBEnums import DistanceMethodEnums
-from models.db_schemas import RetrevedDocument
+from models.db_schemas import RetrievedDocument
 from typing import List
 import logging
 
@@ -137,7 +137,7 @@ class QdrantDBProvider(VectorDBInterface):
             return None
         
         return [
-            RetrevedDocument(**{
+            RetrievedDocument(**{
                 "text": point.payload.get("text", ""),
                 "score": point.score
             }) for point in results.points
