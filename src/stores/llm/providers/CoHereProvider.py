@@ -2,6 +2,7 @@ from ..LLMInterface import LLMInterface
 from ..LLMEnums import CoHereEnums, DocumentTypeEnums
 import logging
 import cohere
+from typing import List, Union
 
 class CoHereProvider(LLMInterface):
     def __init__(self, api_key: str,
@@ -63,10 +64,13 @@ class CoHereProvider(LLMInterface):
         return response.text
       
     
-    def embed_text(self, text: str, document_type: str = None):
+    def embed_text(self, text: Union[str, List[str]], document_type: str = None):
         if not self.client:
             return None
-        
+        # Normalize input to a list of strings: wrap single string, leave lists as-is
+        if isinstance(text, str):
+            text = [text]
+
         if not self.embedding_model_id:
             return None
         
@@ -75,7 +79,7 @@ class CoHereProvider(LLMInterface):
             input_type = CoHereEnums.QUERY.value
 
         response = self.client.embed(
-            texts=[self.get_proccessed_text(text)],
+            texts=[self.get_proccessed_text(t) for t in text],
             model=self.embedding_model_id,
             input_type=input_type,
             embedding_types=["float"]
@@ -85,7 +89,7 @@ class CoHereProvider(LLMInterface):
             self.logger.error("Invalid embedding response from Cohere API.")
             return None
         
-        return response.embeddings.float[0]
+        return [f for f in response.embeddings.float]
     
     def construct_prompt(self, prompt, role):
         return {
