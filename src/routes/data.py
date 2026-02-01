@@ -11,6 +11,7 @@ from models.ProjectModel import ProjectModel
 from models.AssetModel import AssetModel
 from models.db_schemas import DataChunk, Asset
 from models.ChunkModel import ChunkModel
+from controllers import NLPController
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -20,7 +21,7 @@ data_router = APIRouter(
 )
 
 @data_router.post("/upload/{project_id}")
-async def upload_file(request: Request, project_id: str, file: UploadFile, 
+async def upload_file(request: Request, project_id: int, file: UploadFile, 
                       app_settings : settings = Depends(get_settings)):
  
     project_model = await ProjectModel.create_instance(request.app.db_client)
@@ -55,7 +56,7 @@ async def upload_file(request: Request, project_id: str, file: UploadFile,
     asset_model = await AssetModel.create_instance(request.app.db_client)
     
     asset_resource = Asset(
-        asset_project_id=project.id,
+        asset_project_id=project.project_id,
         asset_name=file_id,
         asset_type=AssetTypeEnum.FILE.value,
         asset_size=os.path.getsize(file_path),
@@ -65,12 +66,12 @@ async def upload_file(request: Request, project_id: str, file: UploadFile,
 
     return JSONResponse(
         content={"message": ResponseStatus.FILE_UPLOAD_SUCCESS.value,
-                 "file_id": str(asset_record.id),
+                 "file_id": str(asset_record.asset_id),
                  }
     )
      
 @data_router.post("/process/{project_id}")
-async def process_file(request: Request, project_id: str, process_request: ProcessRequest):
+async def process_file(request: Request, project_id: int, process_request: ProcessRequest):
 
     chunk_size = process_request.chunk_size
     overlap_size = process_request.overlap_size
@@ -81,11 +82,18 @@ async def process_file(request: Request, project_id: str, process_request: Proce
     project = await project_model.get_project_or_create_one(project_id)
     
     asset_model = await AssetModel.create_instance(request.app.db_client)
+    
+    nlp_controller = NLPController(
+        vector_db_client=request.app.vector_db_client,
+        embedding_client=request.app.embedding_client,
+        generation_client=request.app.generation_client,
+        template_parser=request.app.template_parser
+    )
 
     project_files_ids = {}
 
     if process_request.file_id:
-        asset_record = await asset_model.get_asset_record_by_name(project.id, file_id)
+        asset_record = await asset_model.get_asset_record_by_name(project.project_id, file_id)
         if not asset_record:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -93,12 +101,12 @@ async def process_file(request: Request, project_id: str, process_request: Proce
             )
     
         project_files_ids = {
-                    asset_record.id:asset_record.asset_name
+                    asset_record.asset_id:asset_record.asset_name
         }
     else:
-        project_assets = await asset_model.get_all_assets(project.id, AssetTypeEnum.FILE.value)
+        project_assets = await asset_model.get_all_assets(project.project_id, AssetTypeEnum.FILE.value)
         project_files_ids = {
-                    record.id:record.asset_name 
+                    record.asset_id:record.asset_name 
                     for record in project_assets
                     }
 
@@ -116,13 +124,13 @@ async def process_file(request: Request, project_id: str, process_request: Proce
     chunk_model = await ChunkModel.create_instance(request.app.db_client)
 
     if do_reset:
-            await chunk_model.delete_chunks_by_project_id(project.id)
-            return JSONResponse(
-                content={
-                    "message": ResponseStatus.FILE_PROCESSING_RESET.value,
-                    "num_chunks": 0,
-                }
-            )
+        # Delete collection from VectorDB
+        collection_name = nlp_controller.create_collection_name(project.project_id)
+        _ = await request.app.vector_db_client.delete_collection(collection_name)
+
+        # Delete chunks from DB
+        _ = await chunk_model.delete_chunks_by_project_id(project.project_id)
+          
     for asset_id, file_id in project_files_ids.items():
         file_content = process_controller.get_file_content(file_id)
 
@@ -147,8 +155,8 @@ async def process_file(request: Request, project_id: str, process_request: Proce
                 chunk_text=chunk.page_content,
                 chunk_metadata=chunk.metadata,
                 chunk_order=i+1,
-                chunk_project_id=project.id,
-                chunk_assets_id=asset_id
+                chunk_project_id=project.project_id,
+                chunk_asset_id=asset_id
             )
             for i, chunk in enumerate(file_chunks)
             ]
