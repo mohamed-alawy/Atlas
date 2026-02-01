@@ -5,6 +5,7 @@ from models.db_schemas import RetrievedDocument
 from typing import List
 import logging
 from sqlalchemy.sql import text as sql_text
+from sqlalchemy.exc import IntegrityError
 import json
 
 class PGVectorProvider(VectorDBInterface):
@@ -31,9 +32,13 @@ class PGVectorProvider(VectorDBInterface):
     async def connect(self):
         async with self.db_client() as session:
             async with session.begin():
-                await session.execute(sql_text(
-                    "CREATE EXTENSION IF NOT EXISTS vector;"
+                try:
+                    await session.execute(sql_text(
+                        "CREATE EXTENSION IF NOT EXISTS vector;"
                     ))
+                except IntegrityError:
+                    # ignore race condition where multiple processes try to create the extension
+                    self.logger.info("vector extension already exists or was created concurrently")
             await session.commit()
 
     async def disconnect(self):

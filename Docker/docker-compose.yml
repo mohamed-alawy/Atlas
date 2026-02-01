@@ -1,34 +1,145 @@
 services :
-  mongodb:
-    image: mongo:noble
-    container_name: mongodb
-    ports:
-     - "27027:27017"  # Map host port 27027 to container port 27017
-    volumes:
-      - mongodb_data:/data/db
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-    networks:
+  # FastAPI application service
+  fastapi:
+    build :
+      context : ..
+      dockerfile : docker/atlas/Dockerfile
+    container_name : fastapi
+    ports :
+      - "8000:8000"
+    volumes :
+      - fastapi_data:/app/assets
+    networks :
       - backend
-    restart: always  # Restart the container automatically if it stops
-
-  pgvector:
-    image: pgvector/pgvector:0.8.1-pg18-trixie
-    container_name: pgvector
-    ports:
-      - "5432:5432" 
-    volumes:
-      - pgvector_data:/var/lib/postgresql
-    environment:
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    networks:
+    restart : always
+    depends_on :
+      pgvector:
+        condition : service_healthy
+    env_file :
+      - ./env/.env.app
+  
+  # Nginx service
+  nginx :
+    image : nginx:stable-alpine3.23
+    container_name : nginx
+    ports :
+      - "80:80"
+    volumes :
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks :
       - backend
-    restart: always  
+    restart : always
+    depends_on :
+      - fastapi
 
-volumes:
-  mongodb_data:
-  pgvector_data:
+  # PostgreSQL (pgvector) service
+  pgvector :
+    image : pgvector/pgvector:0.8.1-pg18-trixie
+    container_name : pgvector
+    env_file :
+      - ./env/.env.postgres
+    ports :
+      - "5432:5432"
+    volumes :
+      - pgvector:/var/lib/postgresql
+    networks :
+      - backend
+    restart : always
+    healthcheck :
+      test : [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval : 5s
+      timeout : 5s
+      retries : 5
+      start_period : 10s
 
-networks:
-  backend:
+  # Qdrant vector database service
+  qdrant :
+    image : qdrant/qdrant:v1.16
+    container_name : qdrant
+    ports :
+      - "6333:6333"
+      - "6334:6334"
+    volumes :
+      - qdrant_data:/qdrant/storage
+    networks :
+      - backend
+    restart : always
+
+  # Prometheus monitoring service
+  prometheus :
+    image : prom/prometheus:v3.5.1
+    container_name : prometheus
+    volumes :
+      - prometheus_data:/prometheus
+      - ./prometheus/prometheus.yaml:/etc/prometheus/prometheus.yml
+    ports :
+      - "9090:9090"
+    networks :
+      - backend
+    restart : always
+    command :
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+
+  # Grafana visualization service
+  grafana :
+    image : grafana/grafana:12.3-ubuntu
+    container_name : grafana
+    volumes :
+      - grafana_data:/var/lib/grafana
+    ports :
+      - "3000:3000"
+    env_file :
+      - ./env/.env.grafana
+    depends_on :
+      - prometheus
+    networks :
+      - backend
+    restart : always
+
+  # Node Exporter for system metrics
+  node-exporter :
+    image : prom/node-exporter:v1.10.2
+    container_name : node-exporter
+    ports :
+      - "9100:9100"
+    volumes :
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command :
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks :
+      - backend
+    restart : always
+
+  # Postgres Exporter for PostgreSQL metrics
+  postgres-exporter :
+    image : prometheuscommunity/postgres-exporter:v0.18.1
+    container_name : postgres-exporter
+    env_file :
+      - ./env/.env.postgres-exporter
+    ports :
+      - "9187:9187"
+    depends_on :
+      - pgvector
+    networks :
+      - backend
+    restart : always
+
+networks :
+  backend :
+    driver : bridge
+
+volumes :
+  fastapi_data :
+  pgvector :
+  qdrant_data :
+  prometheus_data :
+  grafana_data :

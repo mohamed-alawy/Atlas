@@ -1,0 +1,40 @@
+APP_NAME="Atlas"
+APP_VERSION="0.1.0"
+
+FILE_ALLOWED_TYPES=["text/plain", "application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/markdown"]
+MAX_FILE_SIZE_MB=100
+FILE_CHUNK_SIZE=512000 # in bytes (500 KB)
+
+POSTGRES_USERNAME="postgres"
+POSTGRES_PASSWORD="password"
+POSTGRES_HOST="pgvector"
+POSTGRES_PORT=5432
+POSTGRES_MAIN_DB="atlas"
+
+# ================ LLM Settings ================
+GENERATION_BACKEND_LITRAL=["openai", "cohere"]
+GENERATION_BACKEND="openai"  
+EMBEDDING_BACKEND="openai"  
+
+OPENAI_API_KEY=""
+OPENAI_BASE_URL=  
+COHERE_API_KEY=""
+
+GENERATION_MODEL_ID="command-r-08-2024" 
+EMBEDDING_MODEL_ID="embed-multilingual-light-v3.0" 
+EMBEDDING_MODEL_SIZE=384 
+
+INPUT_MAX_TOKEN=1000
+GENERATION_MAX_TOKEN=1000
+GENERATION_TEMPERATURE=0.1
+
+# ================ VectorDB Settings ================
+VECTOR_DB_BACKEND_LITRAL=["QDRANT", "PGVECTOR"]
+VECTOR_DB_BACKEND="PGVECTOR" 
+VECTOR_DB_PATH="qdrant_db"
+VECTOR_DB_DISTANCE_METHOD="cosine"
+VECTOR_DB_PGVEC_INDEX_THRESHOLD=1000
+
+# ================ Template Configs ================
+PRIMARY_LANGUAGE="en"
+DEFAULT_LANGUAGE="en"
