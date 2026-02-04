@@ -1,6 +1,8 @@
 from pydantic_settings import BaseSettings
 from typing import List
 
+from sqlalchemy import false
+
 class settings(BaseSettings):
 
     APP_NAME: str
@@ -40,6 +42,13 @@ class settings(BaseSettings):
     
     PRIMARY_LANGUAGE: str = "en"
     DEFAULT_LANGUAGE: str = "en"
+
+    CELERY_BROKER_URL: str = None
+    CELERY_RESULT_BACKEND: str = None
+    CELERY_TASK_SERIALIZER: str = "json"
+    CELERY_TASK_TIME_LIMIT: int = 600
+    CELERY_TASK_ACKS_LATE: bool = True
+    CELERY_WORKER_CONCURRENCY: int = 2
 
     class Config:
         env_file = ".env"

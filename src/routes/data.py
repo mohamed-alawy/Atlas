@@ -12,6 +12,7 @@ from models.AssetModel import AssetModel
 from models.db_schemas import DataChunk, Asset
 from models.ChunkModel import ChunkModel
 from controllers import NLPController
+from tasks.file_processing import process_project_files
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -76,7 +77,21 @@ async def process_file(request: Request, project_id: int, process_request: Proce
     chunk_size = process_request.chunk_size
     overlap_size = process_request.overlap_size
     do_reset = process_request.do_reset
-    file_id = process_request.file_id
+
+    task = process_project_files.delay(
+        project_id=project_id,
+        file_id=process_request.file_id,
+        chunk_size=chunk_size,
+        overlap_size=overlap_size,
+        do_reset=do_reset
+    )
+
+    return JSONResponse(
+        content={
+            "message": ResponseStatus.FILE_PROCESSING_SUCCESS.value,
+            "task_id": task.id
+        }
+    )
 
     project_model = await ProjectModel.create_instance(request.app.db_client)
     project = await project_model.get_project_or_create_one(project_id)
@@ -93,7 +108,7 @@ async def process_file(request: Request, project_id: int, process_request: Proce
     project_files_ids = {}
 
     if process_request.file_id:
-        asset_record = await asset_model.get_asset_record_by_name(project.project_id, file_id)
+        asset_record = await asset_model.get_asset_record_by_id(project.project_id, int(process_request.file_id))        
         if not asset_record:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -110,7 +125,7 @@ async def process_file(request: Request, project_id: int, process_request: Proce
                     for record in project_assets
                     }
 
-    if not project_files_ids or len(project_files_ids) == 0:
+    if len(project_files_ids) == 0:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"error": ResponseStatus.NO_FILES_TO_PROCESS.value}
@@ -150,7 +165,7 @@ async def process_file(request: Request, project_id: int, process_request: Proce
                 content={"error": ResponseStatus.FILE_PROCESSING_FAILED.value}
             )
         
-        file_chunks = [
+        file_chunks_records = [
             DataChunk(
                 chunk_text=chunk.page_content,
                 chunk_metadata=chunk.metadata,
@@ -161,7 +176,7 @@ async def process_file(request: Request, project_id: int, process_request: Proce
             for i, chunk in enumerate(file_chunks)
             ]
         
-        num_records += await chunk_model.insert_multiple_chunks(file_chunks)
+        num_records += await chunk_model.insert_multiple_chunks(chunks=file_chunks_records)
         num_files += 1
 
     return JSONResponse(

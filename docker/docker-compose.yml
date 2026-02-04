@@ -39,7 +39,7 @@ services :
     env_file :
       - ./env/.env.postgres
     ports :
-      - "5432:5432"
+      - "15432:5432"
     volumes :
       - pgvector:/var/lib/postgresql
     networks :
@@ -132,6 +132,45 @@ services :
     networks :
       - backend
     restart : always
+  
+  # RabbitMQ service
+  rabbitmq :
+    image : rabbitmq:4.2.3-management-alpine
+    container_name : rabbitmq
+    env_file :
+      - ./env/.env.rabbitmq
+    ports :
+      - "5672:5672"
+      - "15672:15672"
+    volumes :
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+    networks :
+      - backend
+    restart : always
+    healthcheck :
+      test : [ "CMD", "rabbitmq-diagnostics", "ping" ]
+      timeout : 10s
+      retries : 5
+    
+  # Redis service
+  redis :
+    image : redis:8.4.0
+    container_name : redis
+    env_file :
+      - ./env/.env.redis
+    ports :
+      - "6379:6379"
+    volumes :
+      - redis_data:/data
+    command : ["sh", "-c", "redis-server --appendonly yes --requirepass $$REDIS_PASSWORD"]
+    networks :
+      - backend
+    restart : always
+    healthcheck :
+      test : [ "CMD", "sh", "-c", "redis-cli -a $$REDIS_PASSWORD ping" ]
+      timeout : 10s
+      retries : 5
 
 networks :
   backend :
@@ -143,3 +182,5 @@ volumes :
   qdrant_data :
   prometheus_data :
   grafana_data :
+  rabbitmq_data :
+  redis_data :
