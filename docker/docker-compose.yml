@@ -17,6 +17,75 @@ services :
         condition : service_healthy
     env_file :
       - ./env/.env.app
+
+  # Celery worker service
+  celery_worker :
+    build :
+      context : ..
+      dockerfile : docker/atlas/Dockerfile
+    container_name : celery_worker
+    volumes :
+      - fastapi_data:/app/assets
+    networks :
+      - backend
+    restart : always
+    depends_on :
+      rabbitmq:
+        condition : service_healthy
+      redis:
+        condition : service_healthy
+      pgvector:
+        condition : service_healthy
+    env_file :
+      - ./env/.env.app
+    command : python -m celery -A celery_app worker --queues=default,file_processing,data_indexing --loglevel=info
+    healthcheck :
+      test : [ "CMD-SHELL", "python -m celery -A celery_app inspect ping -d celery@$$HOSTNAME" ]
+      interval : 10s
+      timeout : 10s
+      retries : 5
+      start_period : 30s
+
+  # Celery beat scheduler service
+  celery_beat :
+    build :
+      context : ..
+      dockerfile : docker/atlas/Dockerfile
+    container_name : celery_beat
+    volumes :
+      - fastapi_data:/app/assets
+      - celery_beat_data:/app/celerybeat
+    networks :
+      - backend
+    restart : always
+    depends_on :
+      rabbitmq:
+        condition : service_healthy
+      redis:
+        condition : service_healthy
+    env_file :
+      - ./env/.env.app
+    command : python -m celery -A celery_app beat --loglevel=info
+  
+  # Celery flower monitoring service
+  celery_flower :
+    build :
+      context : ..
+      dockerfile : docker/atlas/Dockerfile
+    container_name : celery_flower
+    ports :
+      - "5555:5555"
+    networks :
+      - backend
+    restart : always
+    depends_on :
+      rabbitmq:
+        condition : service_healthy
+      celery_worker:
+        condition : service_healthy
+    env_file :
+      - ./env/.env.app
+    command : python -m celery -A celery_app flower --config=flowerconfig.py
   
   # Nginx service
   nginx :
@@ -184,3 +253,4 @@ volumes :
   grafana_data :
   rabbitmq_data :
   redis_data :
+  celery_beat_data :
